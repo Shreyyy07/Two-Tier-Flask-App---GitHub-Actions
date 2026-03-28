@@ -4,7 +4,7 @@ import time
 
 app = Flask(__name__)
 
-# 🔹 Retry connection until MySQL is ready
+# 🔹 DB Connection with retry
 def get_db_connection():
     for i in range(20):
         try:
@@ -14,56 +14,76 @@ def get_db_connection():
                 password="root",
                 database="testdb"
             )
-            print("Connected to MySQL ✅")
             return db
-        except Exception as e:
+        except:
             print("MySQL not ready, retrying...")
             time.sleep(2)
-    raise Exception("Database not ready after retries ❌")
+    raise Exception("Database not ready")
 
 
-# 🔹 Initialize DB (CREATE TABLE)
-def init_db():
-    db = get_db_connection()
-    cursor = db.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255)
-    )
-    """)
-
-    db.commit()
-    cursor.close()
-    db.close()
-    print("Database initialized ✅")
-
-
-# 🔹 Call once when app starts
-init_db()
-
-
+# 🔹 HOME ROUTE
 @app.route("/", methods=["GET", "POST"])
 def home():
     db = get_db_connection()
     cursor = db.cursor()
 
+    # ➤ Add Task
     if request.method == "POST":
-        name = request.form.get("name")
-        if name:
-            cursor.execute("INSERT INTO users (name) VALUES (%s)", (name,))
+        task = request.form.get("task")
+        if task:
+            cursor.execute(
+                "INSERT INTO users (task, completed) VALUES (%s, %s)",
+                (task, False)
+            )
             db.commit()
         return redirect("/")
 
-    cursor.execute("SELECT name FROM users")
-    users = cursor.fetchall()
-    users = [user[0] for user in users]
+    # ➤ Fetch Tasks
+    cursor.execute("SELECT id, task, completed FROM users")
+    tasks = cursor.fetchall()
+
+    # ➤ Stats
+    total = len(tasks)
+    completed = sum(1 for t in tasks if t[2])
+    pending = total - completed
 
     cursor.close()
     db.close()
 
-    return render_template("index.html", users=users)
+    return render_template(
+        "index.html",
+        tasks=tasks,
+        total=total,
+        completed=completed,
+        pending=pending
+    )
+
+
+# 🔹 COMPLETE TASK
+@app.route("/complete/<int:id>")
+def complete(id):
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    cursor.execute(
+        "UPDATE users SET completed = TRUE WHERE id = %s",
+        (id,)
+    )
+    db.commit()
+
+    return redirect("/")
+
+
+# 🔹 DELETE TASK
+@app.route("/delete/<int:id>")
+def delete(id):
+    db = get_db_connection()
+    cursor = db.cursor()
+
+    cursor.execute("DELETE FROM users WHERE id = %s", (id,))
+    db.commit()
+
+    return redirect("/")
 
 
 if __name__ == "__main__":

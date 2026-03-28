@@ -1,26 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Flask App</title>
+    <title>TaskFlow Dashboard</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
-    <div class="container">
-        <h1>User Manager 🚀</h1>
+<div class="app">
 
-        <form method="POST">
-            <input type="text" name="name" placeholder="Enter your name" required>
-            <button type="submit">Add User</button>
-        </form>
-
-        <h2>Users List</h2>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>TaskFlow 🚀</h2>
         <ul>
-            {% for user in users %}
-                <li>{{ user }}</li>
-            {% endfor %}
+            <li class="active">Dashboard</li>
+            <li>Today</li>
+            <li>Completed</li>
+            <li>History</li>
         </ul>
     </div>
+
+    <!-- Main Content -->
+    <div class="main">
+
+        <!-- Header -->
+        <div class="header">
+            <h1>Dashboard</h1>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="card">Total: {{ total }}</div>
+            <div class="card">Completed: {{ completed }}</div>
+            <div class="card">Pending: {{ pending }}</div>
+        </div>
+
+        <!-- Add Task -->
+        <form method="POST" class="task-form">
+            <input type="text" name="task" placeholder="Add new task..." required>
+            <button type="submit">Add</button>
+        </form>
+
+        <!-- Task List -->
+        <div class="tasks">
+            {% for task in tasks %}
+                <div class="task">
+                    <span class="{{ 'done' if task[2] else '' }}">
+                        {{ task[1] }}
+                    </span>
+
+                    <div class="actions">
+                        {% if not task[2] %}
+                        <a href="/complete/{{ task[0] }}">✔</a>
+                        {% endif %}
+                        <a href="/delete/{{ task[0] }}">🗑</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
 
 </body>
 </html>
