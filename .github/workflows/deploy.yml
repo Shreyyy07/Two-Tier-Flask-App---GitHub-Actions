@@ -22,5 +22,5 @@ jobs:
           script: |
             cd ~/Two-Tier-Flask-App---GitHub-Actions
             git pull origin main
-            docker compose down -v
-            docker compose up --build -d
+            docker-compose down -v
+            docker-compose up --build -d
