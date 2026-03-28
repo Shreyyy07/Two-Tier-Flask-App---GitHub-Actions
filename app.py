@@ -4,15 +4,24 @@ import os
 
 app = Flask(__name__)
 
-# Database connection
-db = mysql.connector.connect(
-    host="mysql",              # VERY IMPORTANT (service name)
-    user="root",
-    password="root",
-    database="testdb"
-)
+import time
+import mysql.connector
 
-cursor = db.cursor()
+def get_db_connection():
+    for i in range(20):   # retry more times
+        try:
+            db = mysql.connector.connect(
+                host="mysql",
+                user="root",
+                password="root",
+                database="testdb"
+            )
+            print("Connected to MySQL ✅")
+            return db
+        except Exception as e:
+            print("MySQL not ready, retrying...")
+            time.sleep(2)
+    raise Exception("Database not ready after retries ❌")
 
 # Create table if not exists
 cursor.execute("""
@@ -24,6 +33,9 @@ CREATE TABLE IF NOT EXISTS users (
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+    db = get_db_connection()
+    cursor = db.cursor()
+
     if request.method == "POST":
         name = request.form.get("name")
         if name:
@@ -33,8 +45,6 @@ def home():
 
     cursor.execute("SELECT name FROM users")
     users = cursor.fetchall()
-
-
     users = [user[0] for user in users]
 
     return render_template("index.html", users=users)
