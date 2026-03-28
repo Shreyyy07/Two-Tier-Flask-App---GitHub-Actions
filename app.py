@@ -34,7 +34,7 @@ def home():
     cursor.execute("SELECT name FROM users")
     users = cursor.fetchall()
 
-    # Convert list of tuples → simple list
+
     users = [user[0] for user in users]
 
     return render_template("index.html", users=users)
